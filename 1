@@ -1,0 +1,81 @@
+#!/bin/bash
+apt-get update; apt-get upgrade -y
+cd ~/
+mkdir nginx; cd nginx/
+apt-get install git gcc make libpcre3-dev libssl-dev -y
+git clone https://github.com/arut/nginx-rtmp-module
+wget http://nginx.org/download/nginx-1.4.3.tar.gz
+tar zxpvf nginx-1.4.3.tar.gz
+cd nginx-1.4.3
+./configure --add-module=/root/nginx/nginx-rtmp-module/ --with-http_ssl_module --prefix=/usr/local/nginx-streaming/
+make
+make install
+cd /usr/local/nginx-streaming/conf
+mv nginx.conf nginx.cong.bkp
+echo "
+worker_processes  1;
+ 
+events {
+    worker_connections  1024;
+}
+ 
+rtmp {
+    server {
+        listen 1935;
+ 
+        chunk_size 4000;
+ 
+        # video on demand for flv files
+        application vod {
+            play /var/flvs;
+        }
+ 
+        # video on demand for mp4 files
+        application vod2 {
+            play /var/mp4s;
+        }
+    }
+}
+ 
+# HTTP can be used for accessing RTMP stats
+http {
+    access_log /var/log/nginx/access-streaming.log;
+    error_log /var/log/nginx/error-streaming.log;
+ 
+    server {
+        # in case we have another web server on port 80
+        listen      8080;
+ 
+        # This URL provides RTMP statistics in XML
+        location /stat {
+            rtmp_stat all;
+            rtmp_stat_stylesheet stat.xsl;
+        }
+ 
+        location /stat.xsl {
+            # XML stylesheet to view RTMP stats.
+            # Copy stat.xsl wherever you want
+            # and put the full directory path here
+            root /var/www/;
+        }
+ 
+        location /hls {
+            # Serve HLS fragments
+            types {
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+            alias /tmp/app;
+            expires -1;
+        }
+    }
+}
+" > /usr/local/nginx-streaming/conf/nginx.conf
+
+mkdir /var/www; mkdir /var/log/nginx; mkdir /var/mp4s; mkdir /var/flvs
+cp /root/nginx/nginx-rtmp-module/stat.xsl /var/www/
+cd /var/mp4s
+wget 
+/usr/local/nginx-streaming/sbin/nginx
+ip=$(curl api.ipify.org)
+echo "play rtmp://$ip:1935/vod2/vid.mp4
