@@ -1,0 +1,13 @@
+#!/bin/bash
+cd ~/
+sudo apt-get install git make nasm pkg-config libx264-dev libxext-dev libxfixes-dev zlib1g-dev libssl-dev -y
+git clone https://github.com/FFmpeg/FFmpeg.git
+cd FFmpeg
+./configure --enable-nonfree --enable-gpl --enable-libx264 --enable-x11grab --enable-zlib
+make
+sudo make install
+sudo apt-get install libxext-dev libxfixes-dev -y
+rm -Rf /usr/bin/ffmpeg
+ln -s /usr/local/bin/ffmpeg /usr/bin/ffmpeg
+clear
+rm -Rf ~/FFmpeg
